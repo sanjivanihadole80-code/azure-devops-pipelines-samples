@@ -1,55 +1,23 @@
 trigger:
-- main
+  branches:
+    include:
+      - main
 
 pool:
-  vmImage: ubuntu-latest
-
-variables:
-  repository: "myimage"
-  dockerfilePath: "$(Build.SourcesDirectory)/Dockerfile"
-  tag: $(Build.BuildId)
+  vmImage: 'ubuntu-latest'
 
 steps:
-  - task: Cache@2
-    displayName: Cache task
+  - task: NodeTool@0
     inputs:
-      key: 'docker | "$(Agent.OS)" | cache3'
-      path: $(Pipeline.Workspace)/docker
-      cacheHitVar: CACHE_RESTORED #Variable to set to 'true' when the cache is restored
+      versionSpec: '16.x'
+    displayName: 'Install Node.js'
 
   - script: |
-      ls $(Pipeline.Workspace)/docker/
-      docker load -i $(Pipeline.Workspace)/docker/cache.tar
-      # docker load -i $(Pipeline.Workspace)/docker/cache-dotnet-sdk.tar
-    displayName: Docker restore
-    condition: and(not(canceled()), eq(variables.CACHE_RESTORED, 'true'))
+      npm install
+      npm run build
+    displayName: 'Install dependencies & build'
 
-  # - script: |
-  #     date
-  #     docker pull mcr.microsoft.com/dotnet/aspnet:8.0
-  #     docker pull mcr.microsoft.com/dotnet/sdk:8.0
-  #     date
-  #   displayName: Docker pull
-
-  - task: Docker@2
-    displayName: "Build Docker"
+  - task: PublishBuildArtifacts@1
     inputs:
-      command: "build"
-      repository: $(repository)
-      dockerfile: $(dockerfilePath)
-      tags: |
-        $(tag)
-
-  - script: |
-      mkdir -p $(Pipeline.Workspace)/docker
-      docker save -o $(Pipeline.Workspace)/docker/cache.tar $(repository):$(tag)
-      # docker pull mcr.microsoft.com/dotnet/sdk:8.0 || true
-      # docker save -o $(Pipeline.Workspace)/docker/cache-dotnet-sdk.tar "mcr.microsoft.com/dotnet/sdk:8.0"
-    displayName: Docker save
-    condition: and(not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))
-
-  # - script: |
-  #     mkdir -p $(Pipeline.Workspace)/docker
-  #     docker save -o $(Pipeline.Workspace)/docker/cache.tar $(repository):$(tag)
-  #   displayName: Docker save
-  #   condition: and(not(canceled()), not(failed()), ne(variables.CACHE_RESTORED, 'true'))
+      PathtoPublish: 'dist'
+      ArtifactName: 'drop'
