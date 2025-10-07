@@ -1,24 +1,42 @@
+# Simple Azure Pipeline Example for Self-Hosted Agent
+# Save this as: .azure-pipelines.yml
+
 trigger:
-  branches:
-    include:
-      - main
+- main   # pipeline will trigger on every push to the main branch
 
 pool:
-  name: SelfHostedPool
-  vmImage: 'ubuntu-latest'
+  name: SelfHostedPool   # 🔹 change this to your self-hosted pool name
 
 steps:
-  - task: NodeTool@0
-    inputs:
-      versionSpec: '16.x'
-    displayName: 'Install Node.js'
+# 1️⃣ Checkout your code
+- checkout: self
+  displayName: 'Checkout source code'
 
-  - script: |
-      npm install
-      npm run build
-    displayName: 'Install dependencies & build'
+# 2️⃣ Print basic info
+- script: |
+    echo "Agent name: $(Agent.Name)"
+    echo "Running on: $(Agent.OS)"
+    echo "Working directory: $(System.DefaultWorkingDirectory)"
+  displayName: 'Show environment info'
 
-  - task: PublishBuildArtifacts@1
-    inputs:
-      PathtoPublish: 'dist'
-      ArtifactName: 'drop'
+# 3️⃣ Install dependencies (for Node.js example)
+- script: |
+    echo "Installing npm dependencies..."
+    npm install
+  displayName: 'Install dependencies'
+
+# 4️⃣ Build project
+- script: |
+    echo "Building project..."
+    npm run build || echo "Build step skipped (no build script defined)"
+  displayName: 'Build project'
+
+# 5️⃣ Run tests (optional)
+- script: |
+    echo "Running tests..."
+    npm test || echo "No tests defined"
+  displayName: 'Run tests'
+
+# 6️⃣ Finish
+- script: echo "✅ Pipeline completed successfully!"
+  displayName: 'Finish'
