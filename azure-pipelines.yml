@@ -10,6 +10,7 @@ pool:
 steps:
 # 1️⃣ Checkout your code
 - checkout: self
+  clean: true
   displayName: 'Checkout source code'
 
 # 2️⃣ Print basic info
